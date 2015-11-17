@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 	puts(readmsg);
 	memset(readmsg, 0, 2000);
 	
-	write(sockfd, configInfo, strlen(configInfo), 0);
+	write(sockfd, configInfo, strlen(configInfo));
     puts(configInfo);
     
 	msglen = recv(sockfd, readmsg, 2000, 0);
