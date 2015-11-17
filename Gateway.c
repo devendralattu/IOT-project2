@@ -150,7 +150,7 @@ void * connection_handler(void * cs1)
 
 	strcpy(csArr[itemId].name ,strtok(regInfo, ":"));
 	strcpy(csArr[itemId].ip ,strtok(NULL,":"));
-	csArr[itemId].port = atoi(strtok(regInfo,":"));
+	csArr[itemId].port = atoi(strtok(NULL,":"));
 	csArr[itemId].registered = 1;
 	csArr[itemId].value = 0;
 	csArr[itemId].idNum = itemId;
@@ -166,13 +166,16 @@ void * connection_handler(void * cs1)
 	puts(writemsg);
 	write(csArr[itemId].sock, writemsg, strlen(writemsg));
 	memset(readmsg, 0, 2000);
-	reg++;
 	
+	if((strstr(csArr[itemId].name, "doo") != NULL) || (strstr(csArr[itemId].name, "motion") != NULL) || (strstr(csArr[itemId].name, "key") != NULL) || (strstr(csArr[itemId].name, "secur") != NULL))
+	{
+		reg++;
+	}
 	//if received from all sensors, order all sensors to proceed
 	//some code and logic here
 	while(1)
 	{
-		if(id >= 2 && reg >= 2)
+		if(id >= 3 && reg >= 3)
 			break;
 	}	
 	
@@ -182,19 +185,20 @@ void * connection_handler(void * cs1)
 	if(setReg == 1)
 	{
 		setReg = 0;
-		for(i=0;i<3;i++)
+		for(i=0;i<4;i++)
 		{
-			port = csArr[i].port;
-			printf("port = %d\n", port);
-			sprintf(portStr, "%d", port);
-			printf("portStr = %s\n", portStr);
+			if(strstr(csArr[i].name, "secur") == NULL) 
+			{
+				port = csArr[i].port;
+				sprintf(portStr, "%d", port);
 			
-			strcat(registerIds, "\n");
-			strcat(registerIds, csArr[i].name);
-			strcat(registerIds, ":");
-			strcat(registerIds, csArr[i].ip);
-			strcat(registerIds, ":");
-			strcat(registerIds, portStr);
+				strcat(registerIds, "\n");
+				strcat(registerIds, csArr[i].name);
+				strcat(registerIds, ":");
+				strcat(registerIds, csArr[i].ip);
+				strcat(registerIds, ":");
+				strcat(registerIds, portStr);
+			}	
 		}
 	printf("\nmessage to pass to sensors = '''\n%s\n'''\n",registerIds);
 	}		
@@ -209,19 +213,19 @@ void* threadReadFun(void *cs1)
 {
 	int msglen;
 	char readmsg[2000];
+	char sendmsg[2000];
 	
 	clientStruct1 cs = *(clientStruct1*)(cs1);
 	while(msglen = recv(cs.sock, readmsg, 2000, 0) > 0 )
 	{
-		printf("%s : ", cs.name);
-		puts(readmsg);
+		printf("Message received from %s = %s", cs.name, readmsg);
 		
-		char sendmsg[2000];
 		sprintf(sendmsg, "%d;%s;%s;%d;%s", cs.idNum, cs.name, cs.ip, cs.port, readmsg);
-		write(backsockfd, sendmsg, strlen(sendmsg));
-		puts(sendmsg);
+		write(backsockfd, sendmsg, strlen(sendmsg));				
+		printf("Message sent to backend = %s\n",sendmsg);
 		
-		memset(readmsg, 0, 2000);
+		memset(sendmsg, 0, sizeof(sendmsg)); // 17NOV
+		memset(readmsg, 0, sizeof(readmsg));
 	}
 	
 	if(msglen == 0)
