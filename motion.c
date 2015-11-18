@@ -262,11 +262,11 @@ void * connection_handler_2(void * cs2)
 	while(msglen = recv(cs_r.sock, readmsg, 2000, 0) > 0)
 	{
 		puts(readmsg);
-		if(strcmp(readmsg, "keychain-") < 0)
+		if(strstr(readmsg, "keychain-") != NULL)
 		{
 			vectorClock[0] = vectorClock[0] + 1;
 		}
-		if(strcmp(readmsg, "door-") < 0)
+		if(strstr(readmsg, "door-") != NULL)
 		{
 			vectorClock[2] = vectorClock[2] + 1;
 		}
