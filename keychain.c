@@ -259,11 +259,11 @@ void * connection_handler_2(void * cs2)
 	while(msglen = recv(cs_r.sock, readmsg, 2000, 0) > 0)
 	{
 		puts(readmsg);
-		if(strcmp(readmsg, "motion-") < 0)
+		if(strstr(readmsg, "motion-") != NULL)
 		{
 			vectorClock[1] = vectorClock[1] + 1;
 		}
-		if(strcmp(readmsg, "door-") < 0)
+		if(strstr(readmsg, "door-") != NULL)
 		{
 			vectorClock[2] = vectorClock[2] + 1;
 		}
