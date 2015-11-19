@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <stdlib.h>
+#include <malloc.h>
 
 void * connection_handler(void *);
 void * connection_handler_2(void *);
@@ -26,15 +27,19 @@ typedef struct
 struct sockaddr_in motion, keychain;
 int sockfdMotion = 0, sockfdKeychain = 0;
 int vectorClock[4] = {0};
+FILE *fpOutputFile;
+char *file1, *file2, *file3;
 	
 int main(int argc, char* argv[])
-{
-	char* file1 = argv[1];
-	char* file2 = argv[2];
+{	
+	file1 = argv[1];
+	file2 = argv[2];
+	file3 = argv[3];
 	
 	file1 = "DoorConfigurationFile.txt";
 	file2 = "DoorStateFile.txt";
-
+	file3 = "DoorOutputFile.txt";
+	
 	int sockfd;
 	struct sockaddr_in server;
 	char readmsg[2000], msglen;
@@ -118,6 +123,7 @@ int main(int argc, char* argv[])
 	char *value;
 	char *temp;
 	char msgToOtherSensors[2000];
+	char fileMsg[100];
 		
 	i = 0;
 	getline(&state, &len, fp2);
@@ -132,15 +138,18 @@ int main(int argc, char* argv[])
 		if(i == nextTime)
 		{
 			write(sockfd, copyState, strlen(copyState));
-			
-			vectorClock[2] = vectorClock[2] + 1;
-			printf("[%d,%d,%d]",vectorClock[0],vectorClock[1],vectorClock[2]);
-				
-			sprintf(msgToOtherSensors, "door-%s", copyState);
+						
 			if(sockfdMotion > 0 && sockfdKeychain > 0)
 			{
+				vectorClock[2] = vectorClock[2] + 1;
+				printf("[%d,%d,%d]",vectorClock[0],vectorClock[1],vectorClock[2]);
+				
+				sprintf(msgToOtherSensors, "door;%d;%d;%d", vectorClock[0],vectorClock[1],vectorClock[2]);
 				write(sockfdMotion, msgToOtherSensors, strlen(msgToOtherSensors));
 				write(sockfdKeychain, msgToOtherSensors, strlen(msgToOtherSensors));
+				
+				sprintf(fileMsg, "Sent:[%d,%d,%d]\n",vectorClock[0],vectorClock[1],vectorClock[2]);
+				writeToFile(&fileMsg);			
 			}
 			
 			puts(copyState);
@@ -235,22 +244,50 @@ void * connection_handler_2(void * cs2)
 {
 	clientStruct1 cs_r = *(clientStruct1*)(cs2);
 	char *writemsg = "Message from door";
-	int msglen;
+	int msglen, i, vectVal[4] = {0};
 	char readmsg[2000];
+	char vectInfo[50];
+	char fileMsg[100];
 	
-	printf("Reading message from cs_r.sock = %d\n",cs_r.sock);			
+	printf("Reading message from cs_r.sock = %d\n", cs_r.sock);			
 	while(msglen = recv(cs_r.sock, readmsg, 2000, 0) > 0)
 	{
 		puts(readmsg);
-		if(strstr(readmsg, "motion-") != NULL)
+		if(strstr(readmsg, "motion;") != NULL)
 		{
-			vectorClock[1] = vectorClock[1] + 1;
+			strcpy(vectInfo, strtok(readmsg, ";"));//motion
+			printf("vectInfo = %s\n", vectInfo);
+
+			for(i=0; i<3; i++)
+			{
+				vectVal[i] = atoi(strtok(NULL,";"));
+				printf("vectVal[%d] = %d ; ",i,vectVal[i]);
+				if(vectVal[i] > vectorClock[i])
+				{
+					vectorClock[i] = vectVal[i];
+				}
+			}
+			printf("\n");
 		}
-		if(strstr(readmsg, "keychain-") != NULL)
+		if(strstr(readmsg, "keychain;") != NULL)
 		{
-			vectorClock[0] = vectorClock[0] + 1;
+			strcpy(vectInfo, strtok(readmsg, ";"));//keychain
+			printf("vectInfo = %s\n", vectInfo);
+
+			for(i=0; i<3; i++)
+			{
+				vectVal[i] = atoi(strtok(NULL,";"));
+				printf("vectVal[%d] = %d ; ",i,vectVal[i]);
+				if(vectVal[i] > vectorClock[i])
+				{
+					vectorClock[i] = vectVal[i];
+				}
+			}
+			printf("\n");
 		}
 		printf("[%d,%d,%d]\n",vectorClock[0],vectorClock[1],vectorClock[2]);
+		sprintf(fileMsg, "Recv:[%d,%d,%d]\n",vectorClock[0],vectorClock[1],vectorClock[2]);
+		writeToFile(&fileMsg);
 		memset(readmsg, 0, 2000);
 	}
 	if(msglen == 0)
@@ -302,4 +339,11 @@ void * doorConnectKeychainThread(void * args)
 	}
 	
 	puts("door: Connected to keychain");
+}
+
+void writeToFile(char * fileData)
+{
+	fpOutputFile = fopen(file3, "a");
+	fprintf(fpOutputFile, "%s", fileData);
+	fclose(fpOutputFile);
 }
