@@ -121,6 +121,7 @@ int main(int argc, char* argv[])
 	pthread_create(&motConnThread, NULL, &motionConnectKeychainThread, NULL);	
 	pthread_create(&motConnThread, NULL, &motionConnectDoorThread, NULL);	
 	
+	sleep(2);
 	//To read state file and send values to Gateway
 	FILE *fp2 = fopen(file2,"r");
 	char *state = (char *)malloc(sizeof(char)*100);
@@ -142,7 +143,7 @@ int main(int argc, char* argv[])
 		{		
 			if(getline(&state, &len, fp2) < 0)
 			{
-				sprintf(temp, "%d;%s",time(NULL), valCopy);
+				sprintf(temp, "%d;%s;%d;%d;%d",time(NULL), valCopy, vectorClock[0], vectorClock[1], vectorClock[2]);
 				write(sockfd, temp, strlen(temp));
 				
 				if(sockfdKeychain > 0 && sockfdDoor > 0)
@@ -165,11 +166,12 @@ int main(int argc, char* argv[])
 			nextTime = atoi(temp);
 			value = strtok(NULL, ";");
 			strcpy(valCopy, value);
+			valCopy[strlen(valCopy) - 1] = '\0';
 		}
 		
 		if((i % 5) == 0)
 		{	
-			sprintf(temp, "%d;%s", time(NULL), valCopy);
+			sprintf(temp, "%d;%s;%d;%d;%d", time(NULL), valCopy, vectorClock[0], vectorClock[1], vectorClock[2]);
 			write(sockfd, temp, strlen(temp));
 			
 			if(sockfdKeychain > 0 && sockfdDoor > 0)
