@@ -30,6 +30,9 @@ int vectorClock[4] = {0};
 FILE *fpOutputFile;
 char *file1, *file2, *file3;
 
+char *doorIP, *motionIP; //CH
+int doorPort, motionPort; //CH
+	
 int main(int argc, char* argv[])
 {
 	file1 = argv[1];
@@ -55,7 +58,8 @@ int main(int argc, char* argv[])
     char *gatewayPort; 
     char *gatewayAddress = (char *)malloc(sizeof(char)*100);
     char *configInfo = (char *)malloc(sizeof(char)*100);
-    
+    char *line = (char *)malloc(sizeof(char)*100);
+	
 	//1st line
     getline(&gatewayAddress, &len, fp1);
     gatewayIP = strtok(gatewayAddress, ":");
@@ -106,6 +110,31 @@ int main(int argc, char* argv[])
 		break;	
 	}
 	
+	//Read IP Address and port of other sensors
+	line = strtok(readmsg, ":");
+	i = 3;
+	while(i--)
+	{
+		line = strtok(NULL, ":");
+		if(strcmp(line, "door") == 0)
+		{
+			doorIP = strtok(NULL, ":");
+			line = strtok(NULL, ":");
+			doorPort = atoi(line);
+		}
+		else if(strcmp(line, "motionsensor") == 0)
+		{
+			motionIP = strtok(NULL, ":");
+			line = strtok(NULL, ":");
+			motionPort = atoi(line);
+		}		
+		else if(strcmp(line, "keychain") == 0)
+		{
+			line = strtok(NULL, ":");
+			line = strtok(NULL, ":");
+		}
+	}
+	
 	sleep(1);
 	//Create server and connect with other sensors
 	pthread_create(&keySerThread, NULL, &keychainServerThread, NULL);	
@@ -136,14 +165,14 @@ int main(int argc, char* argv[])
 		if(i == nextTime)
 		{		
 			if(getline(&state, &len, fp2) < 0)
-			{
-				sprintf(temp, "%d;%s;%d;%d;%d",time(NULL), valCopy, vectorClock[0], vectorClock[1], vectorClock[2]);
-				write(sockfd, temp, strlen(temp));
-				
+			{				
 				if(sockfdMotion > 0 && sockfdDoor > 0)
 				{
 					vectorClock[0] = vectorClock[0] + 1;
 					printf("[%d,%d,%d]",vectorClock[0],vectorClock[1],vectorClock[2]);
+
+					sprintf(temp, "%d;%s;%d;%d;%d",time(NULL), valCopy, vectorClock[0], vectorClock[1], vectorClock[2]);
+					write(sockfd, temp, strlen(temp));
 					
 					sprintf(msgToOtherSensors, "keychain;%d;%d;%d", vectorClock[0],vectorClock[1],vectorClock[2]);
 					write(sockfdMotion, msgToOtherSensors, strlen(msgToOtherSensors));
@@ -166,13 +195,13 @@ int main(int argc, char* argv[])
 		
 		if((i % 5) == 0)
 		{	
-			sprintf(temp, "%d;%s;%d;%d;%d",time(NULL), valCopy, vectorClock[0], vectorClock[1], vectorClock[2]);
-			write(sockfd, temp, strlen(temp));
-			
 			if(sockfdMotion > 0 && sockfdDoor > 0)
 			{
 				vectorClock[0] = vectorClock[0] + 1;
 				printf("[%d,%d,%d]",vectorClock[0],vectorClock[1],vectorClock[2]);
+
+				sprintf(temp, "%d;%s;%d;%d;%d",time(NULL), valCopy, vectorClock[0], vectorClock[1], vectorClock[2]);
+				write(sockfd, temp, strlen(temp));
 
 				sprintf(msgToOtherSensors, "keychain;%d;%d;%d", vectorClock[0],vectorClock[1],vectorClock[2]);
 				write(sockfdMotion, msgToOtherSensors, strlen(msgToOtherSensors));
@@ -329,8 +358,8 @@ void * keychainConnectMotionThread(void * args)
 
 	//Initialise the backend socket
 	motion.sin_family = AF_INET;
-	motion.sin_addr.s_addr = inet_addr("127.0.0.1");
-	motion.sin_port = htons(8082);
+	motion.sin_addr.s_addr = inet_addr(motionIP);
+	motion.sin_port = htons(motionPort);
 
 	//Connect to gateway
 	if((connect(sockfdMotion, (struct sockaddr *) &motion, sizeof(motion))) < 0)
@@ -351,8 +380,8 @@ void * keychainConnectDoorThread(void * args)
 
 	//Initialise the backend socket
 	door.sin_family = AF_INET;
-	door.sin_addr.s_addr = inet_addr("127.0.0.1");
-	door.sin_port = htons(8084);
+	door.sin_addr.s_addr = inet_addr(doorIP);
+	door.sin_port = htons(doorPort);
 
 	//Connect to gateway
 	if((connect(sockfdDoor, (struct sockaddr *) &door, sizeof(door))) < 0)
