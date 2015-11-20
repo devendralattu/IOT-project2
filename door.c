@@ -115,32 +115,37 @@ int main(int argc, char* argv[])
 	pthread_create(&doConnThread, NULL, &doorConnectMotionThread, NULL);	
 	pthread_create(&doConnThread, NULL, &doorConnectKeychainThread, NULL);	
 	
+	sleep(2);
 	//To read state file and send values to Gateway
 	FILE *fp2 = fopen(file2,"r");
 	char *state = (char *)malloc(sizeof(char)*100);
 	char copyState[20];
 	int nextTime;
-	char *value;
+	char * value;
+	char valueNew[50];
 	char *temp;
 	char msgToOtherSensors[2000];
 	char fileMsg[100];
-		
+	
 	i = 0;
 	getline(&state, &len, fp2);
 	
 	temp = strtok(state,";");
 	nextTime = atoi(temp);
 	value = strtok(NULL,";");
-	sprintf(copyState, "%d;%s", time(NULL), value);
+	sprintf(valueNew, "%s", value);
+	valueNew[strlen(valueNew) - 1] = '\0';
+	
+	sprintf(copyState, "%d;%s;%d;%d;%d", time(NULL), valueNew, vectorClock[0], vectorClock[1], vectorClock[2]);
 	//Pushing values to Gateway
 	while(i <= nextTime)
 	{
 		if(i == nextTime)
-		{
-			write(sockfd, copyState, strlen(copyState));
-						
+		{						
 			if(sockfdMotion > 0 && sockfdKeychain > 0)
 			{
+				write(sockfd, copyState, strlen(copyState));
+		
 				vectorClock[2] = vectorClock[2] + 1;
 				printf("[%d,%d,%d]",vectorClock[0],vectorClock[1],vectorClock[2]);
 				
@@ -159,9 +164,11 @@ int main(int argc, char* argv[])
 			temp = strtok(state,";");
 			nextTime = atoi(temp);
 			value = strtok(NULL,";");
+			sprintf(valueNew, "%s", value);
+			valueNew[strlen(valueNew) - 1] = '\0';
 		}
 		sleep(1);
-		sprintf(copyState, "%d;%s",time(NULL), value);
+		sprintf(copyState, "%d;%s;%d;%d;%d",time(NULL), valueNew, vectorClock[0], vectorClock[1], vectorClock[2]);
 		i++;
 	}
 	fclose(fp2);
