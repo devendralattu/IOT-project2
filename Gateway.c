@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <string.h>
+#include <pthread.h>
 
 void * connection_handler(void *);
 void * threadReadFun(void *);
@@ -38,12 +39,25 @@ char registerIds[300];
 int setReg = 1;
 
 int backsockfd;
+int vectorClock[4] = {0};
+FILE *fpOutputFile;
+char *file3;	
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+//pthread_cond_t cond1;
+//pthread_cond_t cond2;
 	
 int main(int argc, char *argv[])
-{
+{	
+	file3 = "GatewayOutputFile.txt";
+	
 	int sockfd,clientsockfd;
 	struct sockaddr_in server, client;
 	pthread_t thread1;
+	//pthread_mutex_init(&mutex, 0);
+	//pthread_cond_init(&cond1, 0);
+	//pthread_cond_init(&cond2, 0);
+	
 	int c;
 	strcpy(registerIds,"registered");
 
@@ -146,6 +160,7 @@ void * connection_handler(void * cs1)
 	msglen = recv(csArr[itemId].sock, readmsg, 2000, 0);
 	regInfo = (char *)readmsg;
 	
+	puts(regInfo);
 	//Get Client Registration Information
 
 	strcpy(csArr[itemId].name ,strtok(regInfo, ":"));
@@ -167,7 +182,7 @@ void * connection_handler(void * cs1)
 	write(csArr[itemId].sock, writemsg, strlen(writemsg));
 	memset(readmsg, 0, 2000);
 	
-	if((strstr(csArr[itemId].name, "doo") != NULL) || (strstr(csArr[itemId].name, "motion") != NULL) || (strstr(csArr[itemId].name, "key") != NULL) || (strstr(csArr[itemId].name, "secur") != NULL))
+	if((strstr(csArr[itemId].name, "door") != NULL) || (strstr(csArr[itemId].name, "motion") != NULL) || (strstr(csArr[itemId].name, "keychain") != NULL) || (strstr(csArr[itemId].name, "security") != NULL))
 	{
 		reg++;
 	}
@@ -187,12 +202,12 @@ void * connection_handler(void * cs1)
 		setReg = 0;
 		for(i=0;i<4;i++)
 		{
-			if(strstr(csArr[i].name, "secur") == NULL) 
+			if(strstr(csArr[i].name, "security") == NULL) 
 			{
 				port = csArr[i].port;
 				sprintf(portStr, "%d", port);
 			
-				strcat(registerIds, "\n");
+				strcat(registerIds, ";");
 				strcat(registerIds, csArr[i].name);
 				strcat(registerIds, ":");
 				strcat(registerIds, csArr[i].ip);
@@ -211,23 +226,56 @@ void * connection_handler(void * cs1)
 
 void* threadReadFun(void *cs1)
 {
-	int msglen;
+	int msglen, i, vectVal[4] = {0};
 	char readmsg[2000];
 	char sendmsg[2000];
+	char vectInfo[50];
+	char fileMsg[100];
 	
 	clientStruct1 cs = *(clientStruct1*)(cs1);
 	while(msglen = recv(cs.sock, readmsg, 2000, 0) > 0 )
 	{
-		printf("Message received from %s = %s", cs.name, readmsg);
+		pthread_mutex_lock(&mutex);
+		//pthread_cond_wait(&cond2, &mutex);
+	
+		printf("Message received from %s = %s\n", cs.name, readmsg);
+		sprintf(fileMsg, "Message received from %s = %s\n", cs.name, readmsg);
+		writeToFile(&fileMsg);
+		
+		/*
+		strcpy(vectInfo, strtok(readmsg, ";"));//timestamp
+		sprintf(fileMsg, "vectInfo = %s\n", vectInfo);
+		writeToFile(&fileMsg);
+		
+		strcpy(vectInfo, strtok(NULL, ";"));//state
+		sprintf(fileMsg, "vectInfo = %s\n", vectInfo);
+		writeToFile(&fileMsg);
+		
+		for(i=0; i<3; i++)
+		{
+			vectVal[i] = atoi(strtok(NULL,";"));
+			printf("vectVal[%d] = %d ; ",i,vectVal[i]);
+			if(vectVal[i] > vectorClock[i])
+			{
+				vectorClock[i] = vectVal[i];
+			}
+		}
+
+		sprintf(fileMsg, "[%d,%d,%d]\n\n", vectorClock[0], vectorClock[1], vectorClock[2]);
+		writeToFile(&fileMsg);
+		printf("\n");
+		*/
 		
 		sprintf(sendmsg, "%d;%s;%s;%d;%s", cs.idNum, cs.name, cs.ip, cs.port, readmsg);
 		write(backsockfd, sendmsg, strlen(sendmsg));				
 		printf("Message sent to backend = %s\n",sendmsg);
 		
-		memset(sendmsg, 0, sizeof(sendmsg)); // 17NOV
+		memset(sendmsg, 0, sizeof(sendmsg));
 		memset(readmsg, 0, sizeof(readmsg));
+		
+		//pthread_cond_signal(&cond1);
+		pthread_mutex_unlock(&mutex);
 	}
-	
 	if(msglen == 0)
 	{
 		printf("\nJob %s dropped\n", cs.name);
@@ -238,4 +286,11 @@ void* threadReadFun(void *cs1)
 	{
 		perror("\nDisconnected "); 
 	}
+}
+
+void writeToFile(char * fileData)
+{
+	fpOutputFile = fopen(file3, "a");
+	fprintf(fpOutputFile, "%s", fileData);
+	fclose(fpOutputFile);
 }
