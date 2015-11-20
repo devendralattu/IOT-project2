@@ -44,6 +44,8 @@ FILE *fpOutputFile;
 char *file3;	
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutexInner = PTHREAD_MUTEX_INITIALIZER;
+
 //pthread_cond_t cond1;
 //pthread_cond_t cond2;
 	
@@ -235,46 +237,33 @@ void* threadReadFun(void *cs1)
 	clientStruct1 cs = *(clientStruct1*)(cs1);
 	while(msglen = recv(cs.sock, readmsg, 2000, 0) > 0 )
 	{
-		pthread_mutex_lock(&mutex);
-		//pthread_cond_wait(&cond2, &mutex);
-	
 		printf("Message received from %s = %s\n", cs.name, readmsg);
 		sprintf(fileMsg, "Message received from %s = %s\n", cs.name, readmsg);
-		writeToFile(&fileMsg);
 		
-		/*
+		pthread_mutex_lock(&mutex);
+		writeToFile(&fileMsg);		
+			
 		strcpy(vectInfo, strtok(readmsg, ";"));//timestamp
-		sprintf(fileMsg, "vectInfo = %s\n", vectInfo);
-		writeToFile(&fileMsg);
-		
 		strcpy(vectInfo, strtok(NULL, ";"));//state
-		sprintf(fileMsg, "vectInfo = %s\n", vectInfo);
-		writeToFile(&fileMsg);
 		
 		for(i=0; i<3; i++)
 		{
 			vectVal[i] = atoi(strtok(NULL,";"));
 			printf("vectVal[%d] = %d ; ",i,vectVal[i]);
+			
 			if(vectVal[i] > vectorClock[i])
 			{
 				vectorClock[i] = vectVal[i];
 			}
-		}
-
-		sprintf(fileMsg, "[%d,%d,%d]\n\n", vectorClock[0], vectorClock[1], vectorClock[2]);
-		writeToFile(&fileMsg);
-		printf("\n");
-		*/
+		}	
 		
 		sprintf(sendmsg, "%d;%s;%s;%d;%s", cs.idNum, cs.name, cs.ip, cs.port, readmsg);
 		write(backsockfd, sendmsg, strlen(sendmsg));				
+		pthread_mutex_unlock(&mutex);		
 		printf("Message sent to backend = %s\n",sendmsg);
 		
 		memset(sendmsg, 0, sizeof(sendmsg));
 		memset(readmsg, 0, sizeof(readmsg));
-		
-		//pthread_cond_signal(&cond1);
-		pthread_mutex_unlock(&mutex);
 	}
 	if(msglen == 0)
 	{
