@@ -46,9 +46,6 @@ char *file3;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutexInner = PTHREAD_MUTEX_INITIALIZER;
 
-//pthread_cond_t cond1;
-//pthread_cond_t cond2;
-	
 int main(int argc, char *argv[])
 {	
 	file3 = "GatewayOutputFile.txt";
@@ -56,9 +53,6 @@ int main(int argc, char *argv[])
 	int sockfd,clientsockfd;
 	struct sockaddr_in server, client;
 	pthread_t thread1;
-	//pthread_mutex_init(&mutex, 0);
-	//pthread_cond_init(&cond1, 0);
-	//pthread_cond_init(&cond2, 0);
 	
 	int c;
 	strcpy(registerIds,"registered");
@@ -209,7 +203,7 @@ void * connection_handler(void * cs1)
 				port = csArr[i].port;
 				sprintf(portStr, "%d", port);
 			
-				strcat(registerIds, ";");
+				strcat(registerIds, ":");
 				strcat(registerIds, csArr[i].name);
 				strcat(registerIds, ":");
 				strcat(registerIds, csArr[i].ip);
@@ -256,6 +250,7 @@ void* threadReadFun(void *cs1)
 				vectorClock[i] = vectVal[i];
 			}
 		}	
+		printf("\n");
 		
 		sprintf(sendmsg, "%d;%s;%s;%d;%s", cs.idNum, cs.name, cs.ip, cs.port, readmsg);
 		write(backsockfd, sendmsg, strlen(sendmsg));				
