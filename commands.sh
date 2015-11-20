@@ -1,13 +1,13 @@
-gcc -o bo backend.c
-gcc -o gateway  Gateway.c -lpthread
-gcc -o mo motion.c -lpthread
-gcc -o ko keychain.c -lpthread
-gcc -o do door.c -lpthread
-gcc -o so security.c
+gcc -g -o bo backend.c
+gcc -g -o go gateway.c -lpthread
+gcc -g -o mo motion.c -lpthread
+gcc -g -o ko keychain.c -lpthread
+gcc -g -o do door.c -lpthread
+gcc -g -o so security.c
 
 gnome-terminal -e ./bo
 sleep 1;
-gnome-terminal -e ./gateway
+gnome-terminal -e ./go
 sleep 1;
 gnome-terminal -e ./so
 sleep 2;
