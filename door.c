@@ -35,13 +35,13 @@ int keyPort, motionPort; //CH
 	
 int main(int argc, char* argv[])
 {	
-	file1 = argv[1];
-	file2 = argv[2];
-	file3 = argv[3];
-	
 	file1 = "DoorConfigurationFile.txt";
 	file2 = "DoorStateFile.txt";
 	file3 = "DoorOutputFile.txt";
+	
+	file1 = argv[1];
+	file2 = argv[2];
+	file3 = argv[3];
 	
 	int sockfd;
 	struct sockaddr_in server;
@@ -188,7 +188,22 @@ int main(int argc, char* argv[])
 			
 			puts(copyState);
 			if(getline(&state, &len, fp2) < 0)
+			{
 				break;
+				/*
+				rewind(fp2);
+				
+				i = 0;
+				getline(&state, &len, fp2);
+	
+				temp = strtok(state,";");
+				nextTime = atoi(temp);
+				value = strtok(NULL,";");
+				sprintf(valueNew, "%s", value);
+				valueNew[strlen(valueNew) - 1] = '\0';
+				continue;
+				*/
+			}
 				
 			temp = strtok(state,";");
 			nextTime = atoi(temp);
@@ -378,7 +393,7 @@ void * doorConnectKeychainThread(void * args)
 
 void writeToFile(char * fileData)
 {
-	fpOutputFile = fopen(file3, "a");
+	fpOutputFile = fopen(file3, "a+");
 	fprintf(fpOutputFile, "%s", fileData);
 	fclose(fpOutputFile);
 }
