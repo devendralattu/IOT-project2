@@ -7,10 +7,11 @@ gcc -g -o so security.c
 
 gnome-terminal -e ./bo
 sleep 1;
-gnome-terminal -e ./go
+gnome-terminal -e ./go #GatewayOutputFile.txt
 sleep 1;
 gnome-terminal -e ./so
 sleep 2;
+
 gnome-terminal -e ./do #DoorConfigurationFile.txt DoorStateFile.txt
 sleep 2;
 gnome-terminal -e ./ko #KeychainConfigurationFile.txt KeychainStateFile.txt

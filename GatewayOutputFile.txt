@@ -1,26 +1,37 @@
-Message received from keychain = 1448061034;True;1;0;0
-Message received from door = 1448061034;Open;0;0;1
-Message received from motionsensor = 1448061034;True;1;1;1
-Message received from keychain = 1448061039;True;2;1;1
-Message received from motionsensor = 1448061039;True;2;2;1
-Message received from keychain = 1448061044;False;3;2;1
-Message received from door = 1448061044;Close;2;2;2
-Message received from motionsensor = 1448061044;False;3;3;2
-Message received from keychain = 1448061049;False;4;3;2
-Message received from motionsensor = 1448061049;False;4;4;2
-Message received from keychain = 1448061054;True;5;4;2
-Message received from door = 1448061054;Open;4;4;3
-Message received from motionsensor = 1448061054;True;5;5;3
-Message received from keychain = 1448061059;True;6;5;3
-Message received from motionsensor = 1448061059;True;6;6;3
-Message received from keychain = 1448061064;True;7;6;3
-Message received from door = 1448061064;Close;6;6;4
-Message received from motionsensor = 1448061064;True;7;7;4
-Message received from keychain = 1448061069;True;8;7;4
-Message received from door = 1448061069;Open;7;7;5
-Message received from motionsensor = 1448061069;True;8;8;5
-Message received from door = 1448061071;Close;8;8;6
-Message received from keychain = 1448061074;False;9;8;6
-Message received from motionsensor = 1448061074;False;9;9;6
-Message received from keychain = 1448061079;False;10;9;6
-Message received from motionsensor = 1448061079;False;10;10;6
+Message received from door = 1448516201;Open;0;0;1
+Security System is ON door
+Message received from keychain = 1448516202;True;1;0;1
+Security System is OFF keychain
+Message received from motionsensor = 1448516203;True;1;1;1
+Message received from keychain = 1448516207;True;2;1;1
+Message received from motionsensor = 1448516208;True;2;2;1
+Message received from door = 1448516211;Close;2;2;2
+Security System is ON door
+Message received from keychain = 1448516212;False;3;2;2
+Message received from motionsensor = 1448516213;False;3;3;2
+Message received from keychain = 1448516217;False;4;3;2
+Message received from motionsensor = 1448516218;False;4;4;2
+Message received from door = 1448516221;Open;4;4;3
+Message received from keychain = 1448516222;True;5;4;3
+Security System is OFF keychain
+Message received from motionsensor = 1448516223;True;5;5;3
+Message received from keychain = 1448516227;True;6;5;3
+Message received from motionsensor = 1448516228;True;6;6;3
+Message received from door = 1448516231;Close;6;6;4
+Security System is ON door
+Message received from keychain = 1448516232;True;7;6;4
+Security System is OFF keychain
+Message received from motionsensor = 1448516233;True;7;7;4
+Message received from door = 1448516236;Open;7;7;5
+Security System is ON door
+Message received from keychain = 1448516237;True;8;7;5
+Security System is OFF keychain
+Message received from door = 1448516238;Close;8;7;6
+Security System is ON door
+Message received from motionsensor = 1448516238;True;8;8;6
+Security System is OFF motionsensor
+Message received from keychain = 1448516242;False;9;8;6
+Security System is ON keychain
+Message received from motionsensor = 1448516243;False;9;9;6
+Message received from keychain = 1448516247;False;10;9;6
+Message received from motionsensor = 1448516248;False;10;10;6

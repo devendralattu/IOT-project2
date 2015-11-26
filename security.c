@@ -5,13 +5,15 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <string.h>
+#include <malloc.h>
 
 int main(int argc, char* argv[])
 {
+	file1 = "SecurityConfigurationFile.txt";
+
 	char* file1 = argv[1];
 	//char* file2 = argv[2];
 	
-	file1 = "SecurityConfigurationFile.txt";
 	
 	int sockfd;
 	struct sockaddr_in server;

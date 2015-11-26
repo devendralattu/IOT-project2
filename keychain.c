@@ -35,14 +35,14 @@ int doorPort, motionPort; //CH
 	
 int main(int argc, char* argv[])
 {
-	file1 = argv[1];
-	file2 = argv[2];
-	file3 = argv[3];
-		
 	file1 = "KeychainConfigurationFile.txt";
 	file2 = "KeychainStateFile.txt";
 	file3 = "KeychainOutputFile.txt";
-
+	
+	file1 = argv[1];
+	file2 = argv[2];
+	file3 = argv[3];
+			
 	int sockfd;
 	struct sockaddr_in server;
 	char readmsg[2000], msglen;
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
 	//Create server and connect with other sensors
 	pthread_create(&keySerThread, NULL, &keychainServerThread, NULL);	
 	
-	sleep(5);
+	sleep(6);
 	//Connect with other sensors
 	pthread_create(&keyConnThread, NULL, &keychainConnectMotionThread, NULL);		
 	pthread_create(&keyConnThread, NULL, &keychainConnectDoorThread, NULL);
@@ -183,6 +183,12 @@ int main(int argc, char* argv[])
 				}
 				puts(temp);
 				break;
+				/*
+				rewind(fp2);
+				i = 0;
+				nextTime = 0;
+				continue;
+				*/
 			}
 			temp = strtok(state, ";");
 			currTime = atoi(temp);
@@ -394,7 +400,7 @@ void * keychainConnectDoorThread(void * args)
 
 void writeToFile(char * fileData)
 {
-	fpOutputFile = fopen(file3, "a");
+	fpOutputFile = fopen(file3, "a+");
 	fprintf(fpOutputFile, "%s", fileData);
 	fclose(fpOutputFile);
 }

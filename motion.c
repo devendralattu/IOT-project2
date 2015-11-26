@@ -34,14 +34,14 @@ char *keyIP, *doorIP; //CH
 int keyPort, doorPort; //CH
 	
 int main(int argc, char* argv[])
-{
-	file1 = argv[1];
-	file2 = argv[2];
-	file3 = argv[3];
-	
+{	
 	file1 = "MotionSensorConfigurationFile.txt";
 	file2 = "MotionSensorStateFile.txt";
 	file3 = "MotionSensorOutputFile.txt";
+
+	file1 = argv[1];
+	file2 = argv[2];
+	file3 = argv[3];
 	
 	int sockfd;
 	struct sockaddr_in server;
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
 	//Create server and connect with other sensors
 	pthread_create(&motSerThread, NULL, &motionServerThread, NULL);	
 	
-	sleep(5);
+	sleep(7);
 	//Connect with other sensors
 	pthread_create(&motConnThread, NULL, &motionConnectKeychainThread, NULL);	
 	pthread_create(&motConnThread, NULL, &motionConnectDoorThread, NULL);	
@@ -183,6 +183,12 @@ int main(int argc, char* argv[])
 				}	
 				puts(temp);
 				break;
+				/*
+				rewind(fp2);
+				i = 0;
+				nextTime = 0;
+				continue;
+				*/
 			}
 			temp = strtok(state, ";");
 			currTime = atoi(temp);
@@ -397,7 +403,7 @@ void * motionConnectDoorThread(void * args)
 
 void writeToFile(char * fileData)
 {
-	fpOutputFile = fopen(file3, "a");
+	fpOutputFile = fopen(file3, "a+");
 	fprintf(fpOutputFile, "%s", fileData);
 	fclose(fpOutputFile);
 }

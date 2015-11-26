@@ -5,7 +5,6 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <string.h>
-#include <pthread.h>
 
 void * connection_handler(void *);
 void * threadReadFun(void *);
@@ -33,6 +32,10 @@ typedef struct
 }clientStruct;
 static clientStruct csArr[15] = {0};
 
+//CH //0 = keychain, 1 = motion, 2 = door, 3 = security
+int currState[4] = {0};
+int prevState[4] = {0};
+
 int id = -1;
 int reg = -1;
 char registerIds[300];
@@ -49,6 +52,8 @@ pthread_mutex_t mutexInner = PTHREAD_MUTEX_INITIALIZER;
 int main(int argc, char *argv[])
 {	
 	file3 = "GatewayOutputFile.txt";
+
+	file3 = argv[1];
 	
 	int sockfd,clientsockfd;
 	struct sockaddr_in server, client;
@@ -105,7 +110,12 @@ int main(int argc, char *argv[])
 	
 	puts("gateway: Connected to backend");
 	//-------------------------------------------------------------------------------------------------------
-	
+	//Initialize starting values: Assuming user is at home
+    currState[0] = 1; //keychain true
+    currState[1] = 0; //motion false
+    currState[2] = 0; //door closed
+    currState[3] = 0; //sec system off
+    
 	c = sizeof(struct sockaddr_in);
 	while (clientsockfd = accept(sockfd,(struct sockaddr *) &client, (socklen_t*)&c))
 	{
@@ -224,15 +234,18 @@ void* threadReadFun(void *cs1)
 {
 	int msglen, i, vectVal[4] = {0};
 	char readmsg[2000];
+	char readBackmsg[2000];
 	char sendmsg[2000];
 	char vectInfo[50];
 	char fileMsg[100];
-	
+	int switcher = 0;
+	 
 	clientStruct1 cs = *(clientStruct1*)(cs1);
 	while(msglen = recv(cs.sock, readmsg, 2000, 0) > 0 )
 	{
 		printf("Message received from %s = %s\n", cs.name, readmsg);
-		sprintf(fileMsg, "Message received from %s = %s\n", cs.name, readmsg);
+		strcpy(readBackmsg, readmsg);
+		sprintf(fileMsg, "Message received from %s = %s\n", cs.name, readBackmsg);
 		
 		pthread_mutex_lock(&mutex);
 		writeToFile(&fileMsg);		
@@ -252,13 +265,83 @@ void* threadReadFun(void *cs1)
 		}	
 		printf("\n");
 		
-		sprintf(sendmsg, "%d;%s;%s;%d;%s", cs.idNum, cs.name, cs.ip, cs.port, readmsg);
+		//------------------------------Logic for Security System------------------------------
+           
+        switch(switcher)
+        {
+            case 0: //keychain
+                prevState[0] = currState[0];
+                if(strcmp(vectInfo, "True") == 0)
+                {
+                    currState[0] = 1;
+                }    
+                else
+                    currState[0] = 0;
+
+                break;
+           
+            case 1: //motionsensor
+                prevState[1] = currState[1];
+                if(strcmp(vectInfo, "True") == 0)
+                    currState[1] = 1;
+                else
+                    currState[1] = 0;   
+                   
+                break;
+           
+            case 2: //door
+                prevState[2] = currState[2];
+                if(strcmp(vectInfo, "Open") == 0)
+                    currState[2] = 1;
+                else   
+                    currState[2] = 0;
+                    
+                break;
+           
+            default:
+                printf("\n In default case");
+                break;
+        }   
+        
+        if(//(prevState[2] == 0 && currState[2] == 1) //Door 
+		//&& prevState[1] == 1 && currState[1] == 0 //Motion
+		(prevState[0] == 1 && currState[0] == 0))//Key
+		{
+			sprintf(fileMsg,"Security System is ON %s\n", cs.name);
+			writeToFile(&fileMsg); 
+		}
+	   
+		//User has come home
+		if(//((prevState[2] == 1 && currState[2] == 0) || (prevState[2] == 0 && currState[2] == 1)) //Door
+		//&& prevState[1] == 0 && currState[1] == 1 //Motion
+		prevState[0] == 0 && currState[0] == 1)//Key
+		{
+			sprintf(fileMsg,"Security System is OFF %s\n", cs.name);
+			writeToFile(&fileMsg); 
+		}
+	   
+		//Thief has come home
+		if((prevState[2] == 1 && currState[2] == 0) || (prevState[2] == 0 && currState[2] == 1)//Door
+		//&& prevState[1] == 0 && currState[1] == 1 //Motion
+		&& (prevState[0] == 0 && currState[0] == 0))//Key
+		{
+			sprintf(fileMsg,"\nBurglar has come home!!! %s\n ", cs.name);
+			writeToFile(&fileMsg); 
+		}  
+		
+        
+        //-------------------------------------------------------------------------------------
+        	
+		
+		
+		sprintf(sendmsg, "%d;%s;%s;%d;%s", cs.idNum, cs.name, cs.ip, cs.port, readBackmsg);
 		write(backsockfd, sendmsg, strlen(sendmsg));				
 		pthread_mutex_unlock(&mutex);		
 		printf("Message sent to backend = %s\n",sendmsg);
 		
 		memset(sendmsg, 0, sizeof(sendmsg));
 		memset(readmsg, 0, sizeof(readmsg));
+		memset(readBackmsg, 0, sizeof(readBackmsg));
 	}
 	if(msglen == 0)
 	{
@@ -274,7 +357,41 @@ void* threadReadFun(void *cs1)
 
 void writeToFile(char * fileData)
 {
-	fpOutputFile = fopen(file3, "a");
+	fpOutputFile = fopen(file3, "a+");
 	fprintf(fpOutputFile, "%s", fileData);
 	fclose(fpOutputFile);
+}
+
+//Check if user or thief has entered or left
+void check()
+{
+    char fileMsg[100];
+    char msg;
+    strcpy(msg, "!");
+    //User has left home
+    if((prevState[2] == 1 && currState[2] == 0) || (prevState[2] == 0 && currState[2] == 1) //Door 
+	//&& prevState[1] == 1 && currState[1] == 0 //Motion
+	&& (prevState[0] == 1 && currState[0] == 0))//Key
+	{
+	    sprintf(fileMsg,"Security System is ON  %c\n", msg);
+		writeToFile(&fileMsg); 
+	}
+   
+	//User has come home
+	if((prevState[2] == 1 && currState[2] == 0) || (prevState[2] == 0 && currState[2] == 1) //Door
+	//&& prevState[1] == 0 && currState[1] == 1 //Motion
+	&& (prevState[0] == 0 && currState[0] == 1))//Key
+	{
+	    sprintf(fileMsg,"\nSecurity System is ON  %c\n ", msg);
+		writeToFile(&fileMsg); 
+	}
+   
+	//Thief has come home
+	if((prevState[2] == 1 && currState[2] == 0) || (prevState[2] == 0 && currState[2] == 1)//Door
+	//&& prevState[1] == 0 && currState[1] == 1 //Motion
+	&& (prevState[0] == 0 && currState[0] == 0))//Key
+	{
+		sprintf(fileMsg,"\nBurglar has come home!!! %c\n ", msg);
+		writeToFile(&fileMsg); 
+	}  
 }

@@ -114,12 +114,15 @@ int main(int argc, char* argv[])
 		char entry[200];
 		char temporary[200];
 		size_t msglen;
-		memset(readmsg, 0, 200);
+		//memset(readmsg, 0, 200);
 		while((msglen = recv(gatewaysockfd, readmsg, 200, 0)) > 0 )
 		{
 			//fflush(fp);
 			readmsg[msglen] = '\0';
 			printf("<<<<<<<Received Message: %s>>>>>>\n", readmsg);
+			
+			writeToFile(readmsg);  
+			
 			//puts(readmsg);
 			/*
 			char * t;
@@ -137,8 +140,8 @@ int main(int argc, char* argv[])
 			char value[5];
 			sprintf(temporary, "%d--%s--%s--%d--%d--%s", cs.id, cs.name, cs.ip, cs.port, cs.timestamp, cs.value);*/
 			//writeToFile(temporary);
-			writeToFile(readmsg);  
 			
+			/*
 			int switcher;
 			
 			if(strcmp(cs.name, "door") == 0)
@@ -204,7 +207,7 @@ int main(int argc, char* argv[])
 			}	
 			if(entry != NULL)
 				writeToFile(entry);
-			
+			*/
 			memset(readmsg, 0, 2000);	
 		}
 	}	
